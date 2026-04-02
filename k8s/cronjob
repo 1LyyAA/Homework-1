@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: log-archiver
+spec:
+  schedule: "*/10 * * * *"  # каждые 10 минут
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: log-archiver
+            image: curlimages/curl:latest   
+            command:
+              - /bin/sh
+              - -c
+              - |
+                TIMESTAMP=$(date +%Y%m%d%H%M%S)
+                ARCHIVE="/tmp/app-logs-${TIMESTAMP}.tar.gz"
+
+                if [ -d "/var/log/example-app" ]; then
+                  tar -czf $ARCHIVE /var/log/example-app
+                  echo "Logs archived to $ARCHIVE from /var/log/example-app"
+                else
+                  mkdir -p /tmp
+                  curl -s http://app-service/logs -o /tmp
+                  tar -czf $ARCHIVE /tmp
+                  echo "Logs archived to $ARCHIVE via HTTP API"
+                fi
+            volumeMounts: 
+              - name: app-logs
+                mountPath: /var/log/example-app 
+          volumes:  
+          - name: app-logs
+            hostPath:
+              path: /var/log/example-app
+              type: DirectoryOrCreate
+          restartPolicy: OnFailure

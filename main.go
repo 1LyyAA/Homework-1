@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Status struct {
@@ -45,6 +46,7 @@ func GetStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handler для POST /log
 func PostLogHandler(w http.ResponseWriter, r *http.Request) {
+	time.Sleep(2 * time.Second)
 	fmt.Println("[POST /log] request received")
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)

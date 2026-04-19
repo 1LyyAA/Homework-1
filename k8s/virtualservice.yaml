@@ -1,0 +1,52 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: my-vs
+  namespace: default
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - my-gateway
+  http:
+    - match:
+      - uri:
+          exact: /log
+        method:
+          exact: POST
+      fault:
+        delay:
+          fixedDelay: 2s
+          percentage:
+            value: 100
+      timeout: 1s
+      retries:
+        attempts: 2
+        perTryTimeout: 1s
+        retryOn: gateway-error,connect-failure,refused-stream
+      route:
+        - destination:
+            host: app-service.default.svc.cluster.local
+            port:
+              number: 80
+
+    - match:
+        - uri:
+            exact: /
+        - uri:
+            exact: /status
+        - uri:
+            exact: /logs
+      route:
+        - destination:
+            host: app-service.default.svc.cluster.local
+            port:
+              number: 80
+
+    - match:
+        - uri:
+            prefix: /
+      directResponse:
+        status: 404
+        body:
+          string: "Not Found"
